@@ -3,7 +3,7 @@
     "{fb005b54-5431-46cc-a3b2-7b6291bbf7cd}": {
       "updates": [
         {
-          "version": "1.0.2",
+          "version": "0.1.0",
           "update_link": "https://github.com/imperviousai/beta-extension-release/releases/download/1.0.2/impervious-plugin-1.0.2.xpi"
         }
       ]
