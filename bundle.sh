@@ -1,12 +1,12 @@
-rm -rf .next/ build/;
+rm -rf .next/ out/;
 rm impervious-extension.zip;
 
 yarn next build;
-yarn next export -o build;
+yarn next export;
 
-cp public/manifest.json ./build;
+cp public/manifest.json ./out;
 
-mv ./build/_next ./build/next
-cd ./build && grep -rli '_next' * | xargs -I@ sed -i '' 's/_next/next/g' @;
+mv ./out/_next ./out/next
+cd ./out && grep -rli '_next' * | xargs -I@ sed -i '' 's/_next/next/g' @;
 
 zip -r -FS ../impervious-extension.zip *;
