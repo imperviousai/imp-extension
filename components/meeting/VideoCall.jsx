@@ -19,6 +19,7 @@ import {
   currentVideoCallAtom,
   hasUnreadVideoMessagesAtom,
 } from "../../stores/peers";
+import { XCircleIcon } from "@heroicons/react/outline";
 
 const Video = ({ peer }) => {
   const ref = useRef();
@@ -58,15 +59,6 @@ const VideoCall = ({ toggleMessaging, peers, id }) => {
   const [hasUnreadVideoMessages] = useAtom(hasUnreadVideoMessagesAtom);
 
   useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({ audio: true, video: true })
-      .then((stream) => {
-        if (userVideo.current) userVideo.current.srcObject = stream;
-        setLocalStream(stream);
-      });
-  }, [setLocalStream]);
-
-  useEffect(() => {
     if (peers.length === 0) {
       // reset the audio and video toggles
       localStream?.getVideoTracks().forEach((track) => {
@@ -87,22 +79,48 @@ const VideoCall = ({ toggleMessaging, peers, id }) => {
     });
   };
 
+  const connectAudioandVideo = () => {
+    navigator.mediaDevices
+      .getUserMedia({ audio: true, video: true })
+      .then((stream) => {
+        if (userVideo.current) userVideo.current.srcObject = stream;
+        setLocalStream(stream);
+        peers.forEach((peer) => peer.addStream(stream));
+      });
+  };
+
+  const disconnectAudioandVideo = () => {
+    localStream?.getTracks().forEach((track) => {
+      track.stop();
+    });
+    setLocalStream();
+    userVideo.current.srcObject = undefined;
+  };
+
   const toggleMute = () => {
+    localStream.getAudioTracks().forEach((track) => {
+      track.enabled = !track.enabled;
+    });
+    setAudioOn(!audioOn);
     peers.forEach((p) => {
       if (p.peer.streams.length > 0) {
         p.peer.streams.forEach((stream) => {
           if (stream.getAudioTracks().length > 0) {
             stream.getAudioTracks().forEach((track) => {
               track.enabled = audioOn ? false : true;
-              setAudioOn(!audioOn);
             });
           }
+          setAudioOn(!audioOn);
         });
       }
     });
   };
 
   const toggleVideo = () => {
+    localStream.getVideoTracks().forEach((track) => {
+      track.enabled = !track.enabled;
+    });
+    setVideoOn(!videoOn);
     peers.forEach((p) => {
       if (p.peer.streams.length > 0) {
         p.peer.streams.forEach((stream) => {
@@ -177,9 +195,9 @@ const VideoCall = ({ toggleMessaging, peers, id }) => {
         </div>
       </div>
       <div className="absolute bottom-0 w-11/12 mb-4 px-6">
-        <div className="px-10 h-16 bg-black bg-opacity-40 inset-x-0 bottom-0 flex justify-between items-center rounded-lg">
+        <div className="px-10 h-16 bg-black bg-opacity-40 inset-x-0 bottom-0 flex justify-around items-center rounded-lg">
           <div className="flex space-x-4">
-            {peers.length > 0 && (
+            {peers.length > 0 ? (
               <>
                 <button
                   type="button"
@@ -211,6 +229,65 @@ const VideoCall = ({ toggleMessaging, peers, id }) => {
                   )}
                   {videoOn ? "Stop Video" : "Start Video"}
                 </button>
+              </>
+            ) : (
+              <>
+                {localStream ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => toggleMute()}
+                      className="flex flex-col items-center px-2 py-2 text-sm leading-4 font-medium rounded-md text-gray-50 bg-opacity-100 hover:bg-opacity-20 hover:bg-gray-100"
+                    >
+                      {audioOn ? (
+                        <BsFillMicFill
+                          className="mb-2 h-6 w-6"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <BsFillMicMuteFill
+                          className="mb-2 h-6 w-6"
+                          aria-hidden="true"
+                        />
+                      )}
+                      {audioOn ? "Mute" : "Unmute"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleVideo()}
+                      className="flex flex-col items-center px-2 py-2 text-sm leading-4 font-medium rounded-md text-gray-50 bg-opacity-100 hover:bg-opacity-20 hover:bg-gray-100"
+                    >
+                      {videoOn ? (
+                        <FaVideo className="mb-2 h-6 w-6" aria-hidden="true" />
+                      ) : (
+                        <FaVideoSlash
+                          className="mb-2 h-6 w-6"
+                          aria-hidden="true"
+                        />
+                      )}
+                      {videoOn ? "Stop Video" : "Start Video"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => disconnectAudioandVideo()}
+                      className="flex flex-col items-center px-2 py-2 text-sm leading-4 font-medium rounded-md text-gray-50 bg-opacity-100 hover:bg-opacity-20 hover:bg-gray-100"
+                    >
+                      <XCircleIcon
+                        className="mb-2 h-6 w-6"
+                        aria-hidden="true"
+                      />
+                      Disconnect A/V
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => connectAudioandVideo()}
+                    className="flex flex-col items-center px-2 py-2 text-sm leading-4 font-medium rounded-md text-gray-50 bg-opacity-100 hover:bg-opacity-20 hover:bg-gray-100"
+                  >
+                    Connect Audio & Video
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -271,7 +348,7 @@ const VideoCall = ({ toggleMessaging, peers, id }) => {
             <button
               type="button"
               onClick={() => destroyCall()}
-              className="inline-flex items-center px-8 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-200"
+              className="inline-flex items-center ml-8 px-12 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-200"
             >
               End
             </button>
@@ -285,7 +362,7 @@ const VideoCall = ({ toggleMessaging, peers, id }) => {
             open={openParticipants}
             setOpen={setOpenParticipants}
             networkId={id}
-            localStream={localStream}
+            localStream={localStream || false}
             title="Invite Users to Meeting"
             subtitle={`Invite people to join this meeting.`}
             type="video-call-invitation"
