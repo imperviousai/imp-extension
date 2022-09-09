@@ -182,6 +182,7 @@ const IdentitySettings = () => {
   const handlePublish = async () => {
     try {
       const accessToken = await getAccessTokenSilently();
+      console.log("USER", user);
       setAuth0Token(accessToken);
       console.info("ACCESS TOKEN: ", accessToken);
       // need to set the token here, it can't be set in useEffect quickly enough it seems
