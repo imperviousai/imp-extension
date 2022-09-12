@@ -31,7 +31,6 @@ const IdentitySettings = () => {
     const getToken = async () => {
       if (user) {
         const accessToken = await getAccessTokenSilently();
-        console.log(accessToken);
         setAuth0Token(accessToken);
       }
     };
