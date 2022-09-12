@@ -152,26 +152,17 @@ export const getContactAvatar = (contact) => {
   }
 };
 
-// LIST_DIDS gql query, fetches the list of dids
-export const LIST_DIDS = gql`
-  query fetchDids {
-    listDIDS {
-      items {
-        id
-      }
-    }
-  }
-`;
-
 export const GET_DID_BY_TWITTER = gql`
   query getDIDByTwitter($twitterUsername: String!) {
-    getDIDByTwitter(twitterUsername: $twitterUsername) {
-      avatarUrl
-      id
-      lastUpdated
-      longFormDid
-      name
-      twitterUsername
+    listDIDS(filter: { twitterUsername: { eq: $twitterUsername } }, limit: 1) {
+      items {
+        avatarUrl
+        id
+        lastUpdated
+        longFormDid
+        name
+        twitterUsername
+      }
     }
   }
 `;
@@ -200,6 +191,8 @@ export const CREATE_DID = gql`
 
 export const DELETE_DID = gql`
   mutation DeleteDID($id: ID!) {
-    DeleteDIDInput(id: $id)
+    deleteDID(input: { id: $id }) {
+      id
+    }
   }
 `;
