@@ -11,14 +11,13 @@ import MainNavigation from "../../components/MainNavigation";
 import { BigHead } from "@bigheads/core";
 import { useAtom } from "jotai";
 import { myAvatarAtom } from "../../stores/settings";
-import { myDidLongFormDocumentAtom } from "../../stores/id";
 import {
   getRandomAvatar,
   CREATE_DID,
   DELETE_DID,
   GET_DID_BY_TWITTER,
 } from "../../utils/contacts";
-import { createDid, resolveDid } from "../../utils/id";
+import { resolveDid } from "../../utils/id";
 import { useFetchMyDid } from "../../hooks/id";
 import RelayLightningSettings from "../../components/settings/RelayLightningSettings";
 import { auth0TokenAtom } from "../../stores/auth";
@@ -146,7 +145,6 @@ const IdentitySettings = () => {
   const router = useRouter();
   const [myAvatar, setMyAvatar] = useAtom(myAvatarAtom);
   const [, setAuth0Token] = useAtom(auth0TokenAtom);
-  const [myDidLongFormDocument] = useAtom(myDidLongFormDocumentAtom);
   const { data: myDid } = useFetchMyDid();
   const {
     user,
@@ -160,11 +158,11 @@ const IdentitySettings = () => {
     variables: { twitterUsername: user.nickname },
   });
   const [
-    createDID,
+    publishDid,
     { data: createDidData, loading: createDidLoading, error: createDidError },
   ] = useMutation(CREATE_DID, {
     variables: {
-      longFormDid: myDidLongFormDocument,
+      longFormDid: longFormDid,
       twitterUsername: user.nickname,
       avatarUrl: user.picture,
       name: user.nickname,
@@ -226,7 +224,7 @@ const IdentitySettings = () => {
       // TODO: handle the actual graphql mutation
       if (user) {
         console.log("PUBLISH");
-        createDid();
+        publishDid();
       }
     } catch (e) {
       console.log(e);
