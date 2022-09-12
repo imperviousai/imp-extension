@@ -16,7 +16,6 @@ import { auth0TokenAtom } from "../stores/auth";
 const ApolloWrapper = ({ children }) => {
   const [auth0Token] = useAtom(auth0TokenAtom);
   const fetchToken = async () => {
-    console.log("Got the token now: ", auth0Token);
     return auth0Token;
   };
 

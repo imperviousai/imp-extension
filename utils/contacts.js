@@ -1,4 +1,5 @@
 import { request } from "./axios-utils";
+import { gql } from "@apollo/client";
 
 // Utility functions for the contacts management
 
@@ -150,3 +151,51 @@ export const getContactAvatar = (contact) => {
     return {};
   }
 };
+
+// LIST_DIDS gql query, fetches the list of dids
+export const LIST_DIDS = gql`
+  query fetchDids {
+    listDIDS {
+      items {
+        id
+      }
+    }
+  }
+`;
+
+export const GET_DID_BY_TWITTER = gql`
+  query getDIDByTwitter($twitterUsername: String!) {
+    getDIDByTwitter(twitterUsername: $twitterUsername) {
+      avatarUrl
+      id
+      lastUpdated
+      longFormDid
+      name
+      twitterUsername
+    }
+  }
+`;
+
+export const CREATE_DID = gql`
+  mutation CreateDID(
+    $longFormDid: String!
+    $twitterUsername: String!
+    $avatarUrl: String!
+    $name: String
+    $lastUpdated: AWSTimestamp
+  ) {
+    CreateDIDInput(
+      longFormDid: $longFormDid
+      twitterUsername: $twitterUsername
+      avatarUrl: $avatarUrl
+      name: $name
+      lastUpdated: $lastUpdated
+    )
+  }
+`;
+
+export const DELETE_DID = gql`
+  mutation DeleteDID($id: ID!) {
+    DeleteDIDInput(id: $id)
+  }
+`;

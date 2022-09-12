@@ -11,14 +11,21 @@ import MainNavigation from "../../components/MainNavigation";
 import { BigHead } from "@bigheads/core";
 import { useAtom } from "jotai";
 import { myAvatarAtom } from "../../stores/settings";
-import { getRandomAvatar } from "../../utils/contacts";
-import { resolveDid } from "../../utils/id";
+import { myDidLongFormDocumentAtom } from "../../stores/id";
+import {
+  getRandomAvatar,
+  CREATE_DID,
+  DELETE_DID,
+  GET_DID_BY_TWITTER,
+} from "../../utils/contacts";
+import { createDid, resolveDid } from "../../utils/id";
 import { useFetchMyDid } from "../../hooks/id";
 import RelayLightningSettings from "../../components/settings/RelayLightningSettings";
 import { auth0TokenAtom } from "../../stores/auth";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useRouter } from "next/router";
 import { CheckCircleIcon } from "@heroicons/react/solid";
+import { useQuery, useMutation } from "@apollo/client";
 
 const subNavigation = [
   // {
@@ -135,11 +142,12 @@ const IdentitySettings = () => {
   const [showAvatarSave, setShowAvatarSave] = useState(false);
   const [currentAvatar, setCurrentAvatar] = useState({});
   const [longFormDid, setLongFormDid] = useState("");
+  const [hasDidPublished, setHasDidPublished] = useState(false);
   const router = useRouter();
   const [myAvatar, setMyAvatar] = useAtom(myAvatarAtom);
   const [, setAuth0Token] = useAtom(auth0TokenAtom);
+  const [myDidLongFormDocument] = useAtom(myDidLongFormDocumentAtom);
   const { data: myDid } = useFetchMyDid();
-
   const {
     user,
     isAuthenticated,
@@ -147,6 +155,40 @@ const IdentitySettings = () => {
     logout,
     getAccessTokenSilently,
   } = useAuth0();
+
+  const { loading, error, data } = useQuery(GET_DID_BY_TWITTER, {
+    variables: { twitterUsername: user.nickname },
+  });
+  const [
+    createDID,
+    { data: createDidData, loading: createDidLoading, error: createDidError },
+  ] = useMutation(CREATE_DID, {
+    variables: {
+      longFormDid: myDidLongFormDocument,
+      twitterUsername: user.nickname,
+      avatarUrl: user.picture,
+      name: user.nickname,
+      lastUpdated: new Date().getTime(),
+    },
+  });
+
+  useEffect(() => {
+    const getToken = async () => {
+      if (user) {
+        const accessToken = await getAccessTokenSilently();
+        setAuth0Token(accessToken);
+        if (data?.getDIDByTwitter) {
+          console.log("FOUND DATA: ", data);
+          setHasDidPublished(true);
+        } else {
+          setHasDidPublished(false);
+        }
+      } else {
+        console.log("no user");
+      }
+    };
+    getToken();
+  }, [getAccessTokenSilently, user, setAuth0Token, data]);
 
   let returnUrl = "";
   if (typeof window !== "undefined") {
@@ -181,12 +223,20 @@ const IdentitySettings = () => {
 
   const handlePublish = async () => {
     try {
-      const accessToken = await getAccessTokenSilently();
-      console.log("USER", user);
-      setAuth0Token(accessToken);
-      console.info("ACCESS TOKEN: ", accessToken);
-      // need to set the token here, it can't be set in useEffect quickly enough it seems
       // TODO: handle the actual graphql mutation
+      if (user) {
+        console.log("PUBLISH");
+        createDid();
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const unpublish = async () => {
+    try {
+      // TODO: handle the actual graphql mutation
+      console.log("Unpublish");
     } catch (e) {
       console.log(e);
     }
@@ -211,10 +261,12 @@ const IdentitySettings = () => {
     setShowAvatarSave(false);
   };
 
+  if (loading) return "Loading...";
+
   return (
     <div className="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:py-12 lg:px-8">
       <h1 className="text-3xl font-extrabold text-blue-gray-900">Identity</h1>
-
+      {error && <p>{error.message}</p>}
       <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-6 sm:gap-x-6">
         <div className="sm:col-span-6">
           <h2 className="text-xl font-medium text-blue-gray-900">Profile</h2>
@@ -349,29 +401,40 @@ const IdentitySettings = () => {
                         <div className="w-full flex justify-between">
                           <div className="flex items-center space-x-4">
                             <p className="font-semi-bold text-md">Identity</p>
-                            <p className="flex items-center text-sm text-gray-500">
-                              <CheckCircleIcon
-                                className="flex-shrink-0 mr-1.5 h-5 w-5 text-green-400"
-                                aria-hidden="true"
-                              />
-                              Published
-                            </p>
-                            <p className="flex items-center text-sm text-gray-500">
-                              <LockClosedIcon
-                                className="flex-shrink-0 mr-1.5 h-5 w-5"
-                                aria-hidden="true"
-                              />
-                              Private
-                            </p>
+                            {hasDidPublished ? (
+                              <p className="flex items-center text-sm text-gray-500">
+                                <CheckCircleIcon
+                                  className="flex-shrink-0 mr-1.5 h-5 w-5 text-green-400"
+                                  aria-hidden="true"
+                                />
+                                Published
+                              </p>
+                            ) : (
+                              <p className="flex items-center text-sm text-gray-500">
+                                <LockClosedIcon
+                                  className="flex-shrink-0 mr-1.5 h-5 w-5"
+                                  aria-hidden="true"
+                                />
+                                Private
+                              </p>
+                            )}
                           </div>
                           <div className="flex space-x-4">
-                            <button>Edit</button>
+                            {hasDidPublished && (
+                              <button
+                                type="button"
+                                className="text-red-500"
+                                onClick={() => unpublish()}
+                              >
+                                Unpublish
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => handlePublish()}
                               className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                             >
-                              Publish
+                              {hasDidPublished ? "Update" : "Publish"}
                             </button>
                             {/* <button
                                 type="button"
