@@ -184,13 +184,17 @@ export const CREATE_DID = gql`
     $name: String
     $lastUpdated: AWSTimestamp
   ) {
-    CreateDIDInput(
-      longFormDid: $longFormDid
-      twitterUsername: $twitterUsername
-      avatarUrl: $avatarUrl
-      name: $name
-      lastUpdated: $lastUpdated
-    )
+    createDID(
+      input: {
+        longFormDid: $longFormDid
+        twitterUsername: $twitterUsername
+        avatarUrl: $avatarUrl
+        name: $name
+        lastUpdated: $lastUpdated
+      }
+    ) {
+      id
+    }
   }
 `;
 
