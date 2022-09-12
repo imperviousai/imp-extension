@@ -196,3 +196,27 @@ export const DELETE_DID = gql`
     }
   }
 `;
+
+export const UPDATE_DID = gql`
+  mutation UpdateDID(
+    $id: ID!
+    $longFormDid: String!
+    $twitterUsername: String!
+    $avatarUrl: String!
+    $name: String
+    $lastUpdated: AWSTimestamp
+  ) {
+    updateDID(
+      input: {
+        id: $id
+        longFormDid: $longFormDid
+        twitterUsername: $twitterUsername
+        avatarUrl: $avatarUrl
+        name: $name
+        lastUpdated: $lastUpdated
+      }
+    ) {
+      id
+    }
+  }
+`;

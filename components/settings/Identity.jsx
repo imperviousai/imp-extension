@@ -3,6 +3,7 @@ import { useQuery, useMutation, useLazyQuery } from "@apollo/client";
 import {
   CREATE_DID,
   DELETE_DID,
+  UPDATE_DID,
   GET_DID_BY_TWITTER,
 } from "./../../utils/contacts";
 import { toast } from "react-toastify";
@@ -27,23 +28,120 @@ function Identity({ user, longFormDid }) {
     refetchQueries: [{ query: GET_DID_BY_TWITTER }, "getDIDByTwitter"],
   });
 
+  const [updateDid] = useMutation(UPDATE_DID, {
+    variables: {
+      id: publishedDid?.id,
+      longFormDid: longFormDid,
+      twitterUsername: user?.nickname,
+      avatarUrl: user?.picture,
+      name: user?.nickname,
+      lastUpdated: new Date().getTime(),
+    },
+    refetchQueries: [{ query: GET_DID_BY_TWITTER }, "getDIDByTwitter"],
+  });
+
   const [deleteDid] = useMutation(DELETE_DID, {
     variables: { id: publishedDid.id },
     refetchQueries: [{ query: GET_DID_BY_TWITTER }, "getDIDByTwitter"],
   });
 
+  const publish = () => {
+    toast(
+      ({ closeToast }) => (
+        <div>
+          <p className="pb-4">
+            Are you sure you want to update your published DID?
+          </p>
+          <div className="flex space-x-4">
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  // TODO: handle the actual graphql mutation
+                  if (user) {
+                    publishDid()
+                      .then(({ data }) => {
+                        toast.success("DID Published Successfuly");
+                      })
+                      .catch((err) => {
+                        console.log(err);
+                        toast.error("Unable to publish DID. Please try again");
+                      });
+                  }
+                } catch (e) {
+                  console.log(e);
+                }
+                closeToast();
+              }}
+              className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Confirm
+            </button>
+            <button
+              type="button"
+              onClick={closeToast}
+              className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      { autoClose: false }
+    );
+  };
+
+  const update = () => {
+    toast(
+      ({ closeToast }) => (
+        <div>
+          <p className="pb-4">
+            Are you sure you want to update your published DID?
+          </p>
+          <div className="flex space-x-4">
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  // TODO: handle the actual graphql mutation
+                  if (user) {
+                    updateDid()
+                      .then(() => {
+                        toast.success("DID Sucessfully Updated!");
+                      })
+                      .catch((e) => {
+                        toast.error("Unable to update DID. Please try again");
+                        console.error(e);
+                      });
+                  }
+                } catch (e) {
+                  console.log(e);
+                }
+                closeToast();
+              }}
+              className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Confirm
+            </button>
+            <button
+              type="button"
+              onClick={closeToast}
+              className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      { autoClose: false }
+    );
+  };
+
   const handlePublish = async () => {
     try {
       // TODO: handle the actual graphql mutation
       if (user) {
-        publishDid()
-          .then(({ data }) => {
-            toast.success("DID Published Successfuly");
-          })
-          .catch((err) => {
-            console.log(err);
-            toast.error("Unable to publish DID. Please try again");
-          });
+        publishedDid ? update() : publish();
       }
     } catch (e) {
       console.log(e);
