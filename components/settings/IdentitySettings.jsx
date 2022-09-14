@@ -31,6 +31,7 @@ const IdentitySettings = () => {
     const getToken = async () => {
       if (user) {
         const accessToken = await getAccessTokenSilently();
+        console.log(accessToken);
         setAuth0Token(accessToken);
       }
     };
@@ -214,7 +215,11 @@ const IdentitySettings = () => {
                 >
                   Log out of Twitter
                 </button>
-                <Identity user={user} longFormDid={longFormDid} />
+                <Identity
+                  user={user}
+                  longFormDid={longFormDid}
+                  shortFormDid={myDid?.id}
+                />
               </div>
             )}
           </div>

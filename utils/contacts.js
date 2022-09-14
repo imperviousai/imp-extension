@@ -160,63 +160,10 @@ export const GET_DID_BY_TWITTER = gql`
         id
         lastUpdated
         longFormDid
+        shortFormDid
         name
         twitterUsername
       }
-    }
-  }
-`;
-
-export const CREATE_DID = gql`
-  mutation CreateDID(
-    $longFormDid: String!
-    $twitterUsername: String!
-    $avatarUrl: String!
-    $name: String
-    $lastUpdated: AWSTimestamp
-  ) {
-    createDID(
-      input: {
-        longFormDid: $longFormDid
-        twitterUsername: $twitterUsername
-        avatarUrl: $avatarUrl
-        name: $name
-        lastUpdated: $lastUpdated
-      }
-    ) {
-      id
-    }
-  }
-`;
-
-export const DELETE_DID = gql`
-  mutation DeleteDID($id: ID!) {
-    deleteDID(input: { id: $id }) {
-      id
-    }
-  }
-`;
-
-export const UPDATE_DID = gql`
-  mutation UpdateDID(
-    $id: ID!
-    $longFormDid: String!
-    $twitterUsername: String!
-    $avatarUrl: String!
-    $name: String
-    $lastUpdated: AWSTimestamp
-  ) {
-    updateDID(
-      input: {
-        id: $id
-        longFormDid: $longFormDid
-        twitterUsername: $twitterUsername
-        avatarUrl: $avatarUrl
-        name: $name
-        lastUpdated: $lastUpdated
-      }
-    ) {
-      id
     }
   }
 `;

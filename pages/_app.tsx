@@ -9,11 +9,15 @@ import ErrorFallback from "../components/ErrorFallback";
 import { Auth0Provider } from "@auth0/auth0-react";
 import auth0Config from "../auth0_config.json";
 import { useRouter } from "next/router";
+import { Amplify } from "aws-amplify";
+import awsExports from "../aws-exports";
 import ApolloWrapper from "../components/ApolloWrapper";
 
 import "../styles.css";
 import "react-toastify/dist/ReactToastify.css";
 import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
+
+Amplify.configure(awsExports);
 
 const queryClient = new QueryClient();
 

@@ -1,49 +1,63 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useLazyQuery } from "@apollo/client";
-import {
-  CREATE_DID,
-  DELETE_DID,
-  UPDATE_DID,
-  GET_DID_BY_TWITTER,
-} from "./../../utils/contacts";
+import { useQuery, useMutation, gql } from "@apollo/client";
+import { GET_DID_BY_TWITTER } from "./../../utils/contacts";
+import { createDID, updateDID, deleteDID } from "../../src/graphql/mutations";
 import { toast } from "react-toastify";
 import { CheckCircleIcon } from "@heroicons/react/solid";
 import { LockClosedIcon } from "@heroicons/react/outline";
 
-function Identity({ user, longFormDid }) {
+function Identity({ user, longFormDid, shortFormDid }) {
   const [publishedDid, setPublishedDid] = useState("");
 
   const { data, loading, error } = useQuery(GET_DID_BY_TWITTER, {
     variables: { twitterUsername: user?.nickname },
   });
 
-  const [publishDid] = useMutation(CREATE_DID, {
+  useEffect(() => {
+    if (data?.listDIDS?.items?.length > 0) {
+      setPublishedDid(data.listDIDS.items[0]);
+    } else {
+      setPublishedDid("");
+    }
+  }, [data]);
+
+  const [publishDid] = useMutation(gql(createDID), {
     variables: {
-      longFormDid: longFormDid,
-      twitterUsername: user?.nickname,
-      avatarUrl: user?.picture,
-      name: user?.nickname,
-      lastUpdated: new Date().getTime(),
+      input: {
+        longFormDid: longFormDid,
+        shortFormDid: shortFormDid,
+        twitterUsername: user?.nickname,
+        avatarUrl: user?.picture,
+        name: user?.nickname,
+        lastUpdated: new Date().getTime(),
+      },
     },
     refetchQueries: [{ query: GET_DID_BY_TWITTER }, "getDIDByTwitter"],
   });
 
-  const [updateDid] = useMutation(UPDATE_DID, {
+  const [updateDid] = useMutation(gql(updateDID), {
     variables: {
-      id: publishedDid?.id,
-      longFormDid: longFormDid,
-      twitterUsername: user?.nickname,
-      avatarUrl: user?.picture,
-      name: user?.nickname,
-      lastUpdated: new Date().getTime(),
+      input: {
+        id: publishedDid?.id,
+        longFormDid: longFormDid,
+        shortFormDid: shortFormDid,
+        twitterUsername: user?.nickname,
+        avatarUrl: user?.picture,
+        name: user?.nickname,
+        lastUpdated: new Date().getTime(),
+      },
     },
     refetchQueries: [{ query: GET_DID_BY_TWITTER }, "getDIDByTwitter"],
   });
 
-  const [deleteDid] = useMutation(DELETE_DID, {
-    variables: { id: publishedDid.id },
+  const [deleteDid] = useMutation(gql(deleteDID), {
+    variables: {
+      input: { id: publishedDid.id },
+    },
     refetchQueries: [{ query: GET_DID_BY_TWITTER }, "getDIDByTwitter"],
   });
+
+  if (loading) return "Loading ...";
 
   const publish = () => {
     toast(
@@ -191,14 +205,6 @@ function Identity({ user, longFormDid }) {
       { autoClose: false }
     );
   };
-
-  useEffect(() => {
-    if (data?.listDIDS?.items?.length > 0) {
-      setPublishedDid(data.listDIDS.items[0]);
-    } else {
-      setPublishedDid("");
-    }
-  }, [data]);
 
   if (loading) return "Loading ...";
 

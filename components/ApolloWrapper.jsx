@@ -9,7 +9,7 @@ import {
   ApolloLink,
 } from "@apollo/client";
 
-import appSyncConfig from "../aws-exports";
+import awsmobile from "../aws-exports";
 import { useAtom } from "jotai";
 import { auth0TokenAtom } from "../stores/auth";
 
@@ -19,10 +19,10 @@ const ApolloWrapper = ({ children }) => {
     return auth0Token;
   };
 
-  const url = appSyncConfig.aws_appsync_graphqlEndpoint;
-  const region = appSyncConfig.aws_appsync_region;
+  const url = awsmobile.aws_appsync_graphqlEndpoint;
+  const region = awsmobile.aws_appsync_region;
   const auth = {
-    type: appSyncConfig.aws_appsync_authenticationType,
+    type: awsmobile.aws_appsync_authenticationType,
     jwtToken: () => fetchToken(),
   };
 
