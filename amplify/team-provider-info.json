@@ -14,6 +14,13 @@
     "categories": {
       "auth": {
         "impextension757a51c5": {}
+      },
+      "function": {
+        "impextensionalgolia": {
+          "secretsPathAmplifyAppId": "d5snpxhl2a2ip",
+          "deploymentBucketName": "amplify-impextension-prod-93245-deployment",
+          "s3Key": "amplify-builds/impextensionalgolia-557579364c336f7a6765-build.zip"
+        }
       }
     }
   }
