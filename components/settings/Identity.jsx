@@ -5,9 +5,13 @@ import { createDID, updateDID, deleteDID } from "../../src/graphql/mutations";
 import { toast } from "react-toastify";
 import { CheckCircleIcon } from "@heroicons/react/solid";
 import { LockClosedIcon } from "@heroicons/react/outline";
+import { useAuth0 } from "@auth0/auth0-react";
+import { useFetchMyDid } from "../../hooks/id";
 
-function Identity({ user, longFormDid, shortFormDid }) {
+function Identity({ longFormDid }) {
   const [publishedDid, setPublishedDid] = useState("");
+  const { user } = useAuth0();
+  const { data: myDid } = useFetchMyDid();
 
   const { data, loading, error } = useQuery(GET_DID_BY_TWITTER, {
     variables: { twitterUsername: user?.nickname },
@@ -25,7 +29,7 @@ function Identity({ user, longFormDid, shortFormDid }) {
     variables: {
       input: {
         longFormDid: longFormDid,
-        shortFormDid: shortFormDid,
+        shortFormDid: myDid?.id,
         twitterUsername: user?.nickname,
         avatarUrl: user?.picture,
         name: user?.nickname,
@@ -40,7 +44,7 @@ function Identity({ user, longFormDid, shortFormDid }) {
       input: {
         id: publishedDid?.id,
         longFormDid: longFormDid,
-        shortFormDid: shortFormDid,
+        shortFormDid: myDid?.id,
         twitterUsername: user?.nickname,
         avatarUrl: user?.picture,
         name: user?.nickname,

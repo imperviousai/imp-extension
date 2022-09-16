@@ -33,11 +33,9 @@ const SafeHydrate = ({ children }) => {
 function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const onRedirectCallback = (appState) => {
-    console.log(appState);
-    const { pathname, state } = appState;
+    const { pathname } = appState;
     router.push({
       pathname,
-      query: { state },
     });
   };
 

@@ -283,13 +283,6 @@ export default function Settings() {
   const [settingsPage, setSettingsPage] = useState("Relay & Lightning");
   const router = useRouter();
 
-  useEffect(() => {
-    if (router.query) {
-      const { state } = router.query;
-      setSettingsPage(state);
-    }
-  }, [router]);
-
   return (
     <>
       <MainNavigation currentPage={pageTitle}>
