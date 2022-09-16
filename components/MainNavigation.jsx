@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState, useEffect, createElement } from "react";
 import { Dialog, Transition, Menu } from "@headlessui/react";
 import {
   CogIcon,
@@ -15,6 +15,8 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { useAtom } from "jotai";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import { getAlgoliaResults } from "@algolia/autocomplete-js";
+import algoliasearch from "algoliasearch";
 // import DarkModeToggle from "./DarkModeToggle";
 import AddContactSlideOut from "../components/contact/AddContactSlideOut";
 import { CopyToClipboard } from "react-copy-to-clipboard";
@@ -35,7 +37,15 @@ import {
   WhatsappIcon,
 } from "react-share";
 import { resolveDid } from "../utils/id";
+import { useAddContact } from "../hooks/contacts";
 import LightningToggle from "./LightingToggle";
+import { Autocomplete } from "./navigation/Autocomplete";
+import {
+  ALGOLIA_ID,
+  ALGOLIA_API_KEY,
+  ALGOLIA_DID_INDEX,
+} from "../utils/contacts";
+import { AutocompleteItem } from "./navigation/AutocompleteItem";
 
 const sidebarNavigation = [
   { name: "Dashboard", href: "/d/dashboard", icon: HomeIcon, current: false },
@@ -237,7 +247,6 @@ const TwitterConnect = () => {
     const getToken = async () => {
       if (user) {
         const accessToken = await getAccessTokenSilently();
-        console.log(accessToken);
         setAuth0Token(accessToken);
       }
     };
@@ -292,8 +301,71 @@ export default function MainNavigation({ children, currentPage }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openAddContactForm, setOpenAddContactForm] = useState(false);
   const { data: myDid } = useFetchMyDid();
+  const { mutate: addContact } = useAddContact();
 
   const isCurrent = (name) => currentPage === name;
+
+  const searchClient = algoliasearch(ALGOLIA_ID, ALGOLIA_API_KEY);
+
+  const importContact = (item) => {
+    const { twitterUsername, name, avatarUrl, longFormDid } = item;
+    resolveDid(longFormDid)
+      .then((res) => {
+        console.log(res);
+        addContact({
+          didDocument: JSON.parse(res.data.document),
+          twitterUsername,
+          name,
+          avatarUrl,
+          myDid,
+        });
+      })
+      .catch((err) => {
+        toast.error(
+          "Unable to parse DID. Check formatting and try again. Long Form DID expected."
+        );
+        console.log("Unable to parse DID while importing contact: ", err);
+      });
+  };
+
+  const saveContactConfirm = (item) => {
+    toast(
+      ({ closeToast }) => (
+        <div>
+          <p className="pb-4">
+            Import contact{" "}
+            <a
+              href={`https://twitter.com/${item.twitterUsername}`}
+              className="text-md text-blue-400"
+            >
+              @{item.twitterUsername}
+            </a>
+            ?
+          </p>
+          <div className="flex space-x-4">
+            <button
+              type="button"
+              onClick={() => {
+                importContact(item);
+                closeToast();
+              }}
+              className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Import
+            </button>
+            <button
+              type="button"
+              onClick={closeToast}
+              className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      { autoClose: false }
+    );
+  };
 
   return (
     <>
@@ -437,14 +509,14 @@ export default function MainNavigation({ children, currentPage }) {
         </Transition.Root>
 
         {/* Content area */}
-        <div className="flex-1 flex flex-col overflow-hidden z-10">
+        <div className="flex-1 flex flex-col overflow-hidden">
           <AddContactSlideOut
             open={openAddContactForm}
             setOpen={setOpenAddContactForm}
             existingContact={null}
           />
           <header className="w-full">
-            <div className="relative z-10 flex-shrink-0 h-16 bg-white border-b border-gray-200 shadow-sm flex">
+            <div className="relative flex-shrink-0 h-16 bg-white border-b border-gray-200 shadow-sm flex">
               <button
                 type="button"
                 className="border-r border-gray-200 px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 md:hidden"
@@ -453,12 +525,44 @@ export default function MainNavigation({ children, currentPage }) {
                 <span className="sr-only">Open sidebar</span>
                 <MenuAlt2Icon className="h-6 w-6" aria-hidden="true" />
               </button>
-              <div className="flex-1 flex justify-between px-4 sm:px-6">
-                <div className="flex-1 flex items-center space-x-4">
+              <div className="flex-1 flex justify-between px-4 sm:px-6 items-center">
+                <div>
                   <h2 className="font-semibold text-primary text-lg">
                     {currentPage}
                   </h2>
                 </div>
+                <div className="bg-blue-100 w-1/2">
+                  <Autocomplete
+                    placeholder="Search for user via Twitter username or contact name"
+                    getSources={({ query }) => [
+                      {
+                        sourceId: ALGOLIA_DID_INDEX,
+                        getItems() {
+                          return getAlgoliaResults({
+                            searchClient,
+                            queries: [
+                              {
+                                indexName: ALGOLIA_DID_INDEX,
+                                query,
+                              },
+                            ],
+                          });
+                        },
+                        templates: {
+                          item({ item }) {
+                            return (
+                              <AutocompleteItem
+                                item={item}
+                                saveContactConfirm={saveContactConfirm}
+                              />
+                            );
+                          },
+                        },
+                      },
+                    ]}
+                  />
+                </div>
+
                 <div className="ml-2 flex items-center space-x-4 sm:ml-6 sm:space-x-6">
                   <button
                     type="button"

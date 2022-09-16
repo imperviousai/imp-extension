@@ -9,6 +9,8 @@
     "bundle": "./bundle.sh"
   },
   "dependencies": {
+    "@algolia/autocomplete-js": "^1.7.1",
+    "@algolia/autocomplete-theme-classic": "^1.7.1",
     "@apollo/client": "^3.6.9",
     "@auth0/auth0-react": "^1.10.2",
     "@aws-amplify/ui-react": "^3.5.1",
@@ -17,6 +19,7 @@
     "@headlessui/react": "^1.4.1",
     "@heroicons/react": "^1.0.5",
     "@tailwindcss/typography": "^0.4.1",
+    "algoliasearch": "^4.14.2",
     "aws-amplify": "^4.3.35",
     "aws-appsync": "^4.1.7",
     "aws-appsync-auth-link": "^3.0.7",

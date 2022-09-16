@@ -16,6 +16,8 @@ import ApolloWrapper from "../components/ApolloWrapper";
 import "../styles.css";
 import "react-toastify/dist/ReactToastify.css";
 import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
+import "@algolia/autocomplete-theme-classic";
+import "../components/navigation/autocomplete.css";
 
 Amplify.configure(awsExports);
 

@@ -2,6 +2,9 @@ import { request } from "./axios-utils";
 import { gql } from "@apollo/client";
 
 // Utility functions for the contacts management
+export const ALGOLIA_ID = "2AT1J9F6CY";
+export const ALGOLIA_API_KEY = "87c6424da600d8a843e353e17b27ecfa"; // not a sensitive token, just the public Algolia Search-Only API Key
+export const ALGOLIA_DID_INDEX = "did_registry";
 
 // Used to generate random avatars using bighead.io
 const bigHeadAttributes = {
@@ -62,7 +65,7 @@ export const addContact = (data) => {
   //     didDocument - didDocument of the contact
   //     name - supply a name/nickname for the contact
   // }
-  const { didDocument, name, myDid } = data;
+  const { didDocument, name, myDid, twitterUsername, avatarUrl } = data;
   // each new contact gets a generated, random bighead avatar.
   const randomAvatar = getRandomAvatar();
   const initialMetadata = {
@@ -77,6 +80,8 @@ export const addContact = (data) => {
         didDocument: JSON.stringify(didDocument),
         name,
         userDID: myDid.id,
+        twitterUsername: twitterUsername || "",
+        avatarUrl: avatarUrl || "",
         metadata: JSON.stringify(initialMetadata),
       },
     },
@@ -87,8 +92,17 @@ export const addContact = (data) => {
 };
 
 export const updateContact = (data) => {
-  const { longFormDid, name, existingContact, avatar } = data;
+  const {
+    longFormDid,
+    name,
+    existingContact,
+    avatar,
+    twitterUsername,
+    avatarUrl,
+  } = data;
   const updatedContact = existingContact;
+  if (twitterUsername) updatedContact = { ...updatedContact, twitterUsername };
+  if (avatarUrl) updatedContact = { ...updatedContact, avatarUrl };
   if (name) updatedContact = { ...updatedContact, name };
   if (longFormDid) updatedContact = { ...updatedContact, did: longFormDid };
   if (avatar) {
