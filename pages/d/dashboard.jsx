@@ -13,7 +13,6 @@ import uniqBy from "lodash/uniqBy";
 import { BsFillLightningChargeFill } from "react-icons/bs";
 import { RiUserSharedFill } from "react-icons/ri";
 import { useRouter } from "next/router";
-import { BigHead } from "@bigheads/core";
 import moment from "moment";
 import PaymentsSlideOut from "../../components/lightning/PaymentsSlideOut";
 import { useFetchContacts } from "../../hooks/contacts";
@@ -29,10 +28,10 @@ import { peersAtom } from "../../stores/peers.js";
 import { XIcon } from "@heroicons/react/outline";
 import { isNotificationExpired } from "../../utils/messages";
 import { confirmPeerInvite } from "../../utils/peers";
-import { getContactAvatar } from "../../utils/contacts";
 import { toast } from "react-toastify";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { myDidLongFormDocumentAtom } from "../../stores/id";
+import ContactAvatar from "../../components/contact/ContactAvatar";
 
 const pageTitle = "Dashboard";
 
@@ -57,15 +56,9 @@ const MessagesTable = ({
 }) => {
   const [, setCurrentConversation] = useAtom(currentConversationAtom);
   // TODO: perhaps export the below function, but for now it will work
-  const renderAvatar = (did) => {
-    let c = contacts.find((contact) => contact.did === did);
-    if (c) {
-      return getContactAvatar(c);
-    } else if (did === myDid.id) {
-      return myAvatar;
-    } else {
-      return {};
-    }
+  const getContact = (did) => {
+    console.log(conversations);
+    return contacts.find((contact) => contact.did === did);
   };
 
   const goToConversation = (did) => {
@@ -160,10 +153,9 @@ const MessagesTable = ({
                 >
                   <div className="flex items-center space-x-3 lg:pl-2">
                     <div className="truncate hover:text-gray-600 flex items-center">
-                      <BigHead
-                        key={i}
-                        className="h-10 w-10 pb-2"
-                        {...renderAvatar(did)}
+                      <ContactAvatar
+                        contact={getContact(did)}
+                        className="h-10 w-10 pb-2 mr-2"
                       />
                       <span className="text-gray-900 text-md font-semibold pr-5">
                         {conversations[did].metadata.name || "Unknown"}
@@ -198,10 +190,10 @@ const MessagesTable = ({
                         (did, i) => (
                           <div key={i}>
                             {did && (
-                              <BigHead
+                              <ContactAvatar
                                 key={i}
+                                contact={getContact(did)}
                                 className="h-6 w-6"
-                                {...renderAvatar(did)}
                               />
                             )}
                           </div>
@@ -272,9 +264,9 @@ const RequestsTable = ({ requests }) => {
               <td className="px-6 py-3 max-w-0 w-full whitespace-nowrap text-sm font-medium text-gray-900">
                 <div className="flex items-center space-x-3 lg:pl-2">
                   <div className="flex flex-shrink-0 -space-x-1">
-                    <BigHead
+                    <ContactAvatar
+                      contact={request.metadata.contact}
                       className="w-8 h-8"
-                      {...getContactAvatar(request.metadata.contact)}
                     />
                   </div>
                   <div href="#" className="truncate hover:text-gray-600">
@@ -377,10 +369,10 @@ const UsersTable = ({ peers, router }) => {
                       aria-hidden="true"
                     />
                   )}
-                  <BigHead
+                  <ContactAvatar
                     key={i}
+                    contact={peer.metadata.contact}
                     className="h-6 w-6"
-                    {...getContactAvatar(peer.metadata.contact)}
                   />
                   <div className="truncate hover:text-gray-600">
                     <span>

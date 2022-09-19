@@ -68,9 +68,11 @@ export const addContact = (data) => {
   const { didDocument, name, myDid, twitterUsername, avatarUrl } = data;
   // each new contact gets a generated, random bighead avatar.
   const randomAvatar = getRandomAvatar();
-  const initialMetadata = {
+  const metadata = JSON.stringify({
     avatar: randomAvatar,
-  };
+    twitterUsername: twitterUsername || "",
+    avatarUrl: avatarUrl || "",
+  });
   return request({
     url: "/v1/contacts/create",
     method: "post",
@@ -80,9 +82,7 @@ export const addContact = (data) => {
         didDocument: JSON.stringify(didDocument),
         name,
         userDID: myDid.id,
-        twitterUsername: twitterUsername || "",
-        avatarUrl: avatarUrl || "",
-        metadata: JSON.stringify(initialMetadata),
+        metadata,
       },
     },
     headers: {
@@ -152,18 +152,6 @@ export const getRandomAvatar = () => {
     result[key] = arr[Math.floor(Math.random() * arr.length)];
   });
   return result;
-};
-
-// the avatar attributes are stored in the DB as a stringified JSON object, need to return
-// the real object
-export const getContactAvatar = (contact) => {
-  if (contact) {
-    return contact.metadata.length > 0
-      ? JSON.parse(contact.metadata).avatar
-      : {};
-  } else {
-    return {};
-  }
 };
 
 export const GET_DID_BY_TWITTER = gql`

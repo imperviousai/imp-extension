@@ -1,19 +1,12 @@
 import { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import { BigHead } from "@bigheads/core";
-import { useAtom } from "jotai";
-import { RefreshIcon } from "@heroicons/react/outline";
 import { resolveDid } from "../../utils/id";
 import { useFetchMyDid } from "../../hooks/id";
-import { getRandomAvatar } from "../../utils/contacts";
-import { myAvatarAtom } from "../../stores/settings";
 import Identity from "./Identity";
+import AvatarRotator from "../contact/AvatarRotator";
 
 const IdentitySettings = () => {
-  const [showAvatarSave, setShowAvatarSave] = useState(false);
-  const [currentAvatar, setCurrentAvatar] = useState({});
   const [longFormDid, setLongFormDid] = useState("");
-  const [myAvatar, setMyAvatar] = useAtom(myAvatarAtom);
   const { data: myDid } = useFetchMyDid();
   const { isAuthenticated } = useAuth0();
 
@@ -28,25 +21,6 @@ const IdentitySettings = () => {
         });
     }
   }, [myDid]);
-
-  useEffect(() => {
-    setCurrentAvatar(myAvatar);
-  }, [myAvatar]);
-
-  const handleAvatarRotation = () => {
-    setShowAvatarSave(true);
-    setCurrentAvatar({ ...getRandomAvatar() });
-  };
-
-  const cancelAvatarSave = () => {
-    setShowAvatarSave(false);
-    setCurrentAvatar(myAvatar);
-  };
-
-  const saveNewAvatar = () => {
-    setMyAvatar(currentAvatar);
-    setShowAvatarSave(false);
-  };
 
   return (
     <div className="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:py-12 lg:px-8">
@@ -69,42 +43,7 @@ const IdentitySettings = () => {
           <p className="mt-1 text-md text-blue-gray-500">
             Here is your avatar, you can rotate your avatar at any time.
           </p>
-          <div className="pb-12 flex flex-col items-center">
-            <div className="flex flex-col items-center">
-              <BigHead
-                {...currentAvatar}
-                className="h-32 w-full object-cover lg:h-48"
-              />
-              <button
-                type="button"
-                onClick={() => handleAvatarRotation()}
-                className="pt-2"
-              >
-                <RefreshIcon
-                  className="-ml-1 mr-2 h-6 w-6 text-gray-900"
-                  aria-hidden="true"
-                />
-              </button>
-              {showAvatarSave && (
-                <div className="flex space-x-2 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => cancelAvatarSave()}
-                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => saveNewAvatar()}
-                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    Save
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+          <AvatarRotator />
         </div>
 
         <div className="sm:col-span-6">

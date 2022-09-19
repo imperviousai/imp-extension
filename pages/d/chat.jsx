@@ -12,7 +12,6 @@ import {
   XIcon,
   UsersIcon,
 } from "@heroicons/react/outline";
-import { BigHead } from "@bigheads/core";
 import { BsFillLightningChargeFill } from "react-icons/bs";
 import { toast } from "react-toastify";
 import { ContactView } from "./contacts";
@@ -27,7 +26,6 @@ import {
   useDeleteGroupMessages,
   useSaveMessage,
 } from "../../hooks/messages";
-import { getContactAvatar } from "../../utils/contacts";
 import {
   showMessagesAsRead,
   isNotificationExpired,
@@ -52,6 +50,7 @@ import dataUriRegex from "data-uri-regex";
 import { encode } from "base64-arraybuffer";
 import FileDownload from "../../components/meeting/FileDownload";
 import useAutosizeTextArea from "../../components/useAutosizeTextArea";
+import ContactAvatar from "../../components/contact/ContactAvatar";
 
 const isJSON = (msg) => {
   try {
@@ -153,9 +152,7 @@ const RenderConversationSection = ({ metadata, unreadMessages, contact }) => {
   return (
     <div className="flex items-center justify-between space-x-4">
       <div className="flex space-x-4">
-        {contact && (
-          <BigHead className="h-10 w-10" {...getContactAvatar(contact)} />
-        )}
+        {contact && <ContactAvatar contact={contact} className="w-10 h-10" />}
 
         <div className="flex flex-col">
           <p
@@ -277,8 +274,8 @@ const ConversationHeader = ({
                   className="flex items-center"
                   onClick={() => setOpenContactPreview(true)}
                 >
-                  <BigHead
-                    {...getContactAvatar(currentConversation)}
+                  <ContactAvatar
+                    contact={currentConversation}
                     className="w-10 h-10"
                   />
                   <div className="flex flex-col ml-3">
@@ -471,7 +468,7 @@ const ListContacts = ({
             {/* probably should be a separate renderContactSection */}
             <div className="flex items-center">
               <div className="flex space-x-4">
-                <BigHead className="h-10 w-10" {...getContactAvatar(contact)} />
+                <ContactAvatar contact={contact} className="h-10 w-10" />
                 <div className="flex flex-col justify-center">
                   <p className="font-base">{contact.name}</p>
                   {/* <p className="font-light text-xs">{contact.did}</p> */}
