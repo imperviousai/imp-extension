@@ -19,8 +19,6 @@ const convertMessagesintoConversations = (messages, contacts, myDid) => {
         (message) =>
           (message.recipients.includes(contact.did) ||
             contact.did === JSON.parse(message.data).from) &&
-          message.type !==
-            "https://impervious.ai/didcomm/relay-registration/1.0" &&
           JSON.parse(message.data).body.content.signal?.type !== "answer"
       )
       .map((message) => {
