@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import MainNavigation from "../../components/MainNavigation";
 import {
   ChatAlt2Icon,
@@ -32,6 +32,8 @@ import { toast } from "react-toastify";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { myDidLongFormDocumentAtom } from "../../stores/id";
 import ContactAvatar from "../../components/contact/ContactAvatar";
+import { resolveDid } from "../../utils/id";
+import { getRandomAvatar } from "../../utils/contacts";
 
 const pageTitle = "Dashboard";
 
@@ -45,28 +47,42 @@ const isJSON = (msg) => {
   return true;
 };
 
-const MessagesTable = ({
-  router,
-  conversations,
-  unreadMessages,
-  contacts,
-  myDid,
-  myAvatar,
-  deleteGroupMessage,
-}) => {
+const MessagesTable = ({ conversations, unreadMessages }) => {
   const [, setCurrentConversation] = useAtom(currentConversationAtom);
-  // TODO: perhaps export the below function, but for now it will work
-  const getContact = (did) => {
-    console.log(conversations);
-    return contacts.find((contact) => contact.did === did);
+  const { data: contactsRes } = useFetchContacts();
+  const { mutate: deleteGroupMessage } = useDeleteGroupMessages();
+  const router = useRouter();
+  const { data: myDid } = useFetchMyDid();
+
+  const getContacts = (lastMessage) => {
+    let f = lastMessage.recipients.filter((r) => r !== myDid.id);
+    let contacts = f.map((recipient) => {
+      if (recipient !== myDid.id) {
+        let c = contactsRes?.data.contacts.find(
+          (contact) => contact.did === recipient
+        );
+        if (!c) {
+          // unknown contact, create a unknown contact object
+          return {
+            did: recipient,
+            name: "Unknown",
+            hasContacted: false,
+            metadata: JSON.stringify({
+              avatar: getRandomAvatar(),
+              avatarUrl: "",
+            }),
+          }; // unknown contact
+        }
+        return c;
+      }
+    });
+
+    return contacts;
   };
 
   const goToConversation = (did) => {
-    const c = contacts.find((contact) => contact.did === did);
-    if (c) {
-      setCurrentConversation(c);
-      router.push("/d/chat");
-    }
+    setCurrentConversation(did);
+    router.push("/d/chat");
   };
 
   const deleteConversation = (groupId) => {
@@ -101,22 +117,20 @@ const MessagesTable = ({
       );
   };
 
-  const renderContent = (metadata) => {
-    if (metadata.lastMessage?.type === "https://didcomm.org/webrtc/1.0/sdp") {
+  const renderContent = (lastMessage) => {
+    if (lastMessage?.data.type === "https://didcomm.org/webrtc/1.0/sdp") {
       return "Sent you an invite to connect.";
-    } else if (metadata.lastMessage?.type === "file-transfer-done") {
+    } else if (lastMessage?.data.type === "file-transfer-done") {
       return "File transfer.";
-    } else if (isJSON(metadata.lastMessage?.body.content)) {
-      const { filename, dataUri } = JSON.parse(
-        metadata.lastMessage?.body.content
-      );
+    } else if (isJSON(lastMessage?.data.body.content)) {
+      const { filename, dataUri } = JSON.parse(lastMessage?.data.body.content);
       if (filename && dataUri) {
         // definitely a file
         return "File transfer.";
       }
     } else {
-      return `${metadata.lastMessage?.body.content?.slice(0, 50)} ${
-        metadata.lastMessage?.body.content.length > 50 ? "..." : ""
+      return `${lastMessage?.data.body.content?.slice(0, 50)} ${
+        lastMessage?.data.body.content.length > 50 ? "..." : ""
       }`;
     }
   };
@@ -140,45 +154,49 @@ const MessagesTable = ({
         </thead>
         <tbody className="bg-white divide-y divide-gray-100">
           {conversations &&
-            Object.keys(conversations).map((did, i) => (
+            conversations.map(({ groupId, messages }, i) => (
               <tr
                 key={i}
                 className={`${
-                  unreadMessages[did] > 0 ? "bg-white" : "bg-gray-100"
+                  unreadMessages[groupId] > 0 ? "bg-white" : "bg-gray-100"
                 }`}
               >
                 <td
-                  onClick={() => goToConversation(did)}
+                  onClick={() => goToConversation(groupId)}
                   className="px-6 py-3 max-w-0 w-full whitespace-nowrap text-sm font-medium text-gray-900"
                 >
                   <div className="flex items-center space-x-3 lg:pl-2">
                     <div className="truncate hover:text-gray-600 flex items-center">
-                      <ContactAvatar
-                        contact={getContact(did)}
-                        className="h-10 w-10 pb-2 mr-2"
-                      />
-                      <span className="text-gray-900 text-md font-semibold pr-5">
-                        {conversations[did].metadata.name || "Unknown"}
-                      </span>
-                      {unreadMessages[did] > 0 && (
+                      {getContacts(messages.slice(-1)[0]).map((contact, i) => (
+                        <Fragment key={i}>
+                          <ContactAvatar
+                            contact={contact}
+                            className="h-10 w-10 pb-2"
+                          />
+                          <span className="pl-2 text-gray-900 text-md font-semibold pr-5">
+                            {contact?.name}
+                          </span>
+                        </Fragment>
+                      ))}
+                      {unreadMessages[groupId] > 0 && (
                         <div className="flex items-center space-x-4 pr-4">
                           <div
                             className="bg-primary flex-shrink-0 w-2.5 h-2.5 rounded-full"
                             aria-hidden="true"
                           />
                           <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
-                            {unreadMessages[did]}
+                            {unreadMessages[groupId]}
                           </span>
                         </div>
                       )}
                       <span
                         className={`${
-                          unreadMessages[did] > 0
+                          unreadMessages[groupId] > 0
                             ? "font-semibold"
                             : "font-normal"
                         }`}
                       >
-                        {renderContent(conversations[did].metadata)}
+                        {renderContent(messages.slice(-1)[0])}
                       </span>
                     </div>
                   </div>
@@ -186,42 +204,34 @@ const MessagesTable = ({
                 <td className="px-6 py-3 text-sm text-gray-500 font-medium">
                   <div className="flex items-center space-x-2">
                     <div className="flex flex-shrink-0 -space-x-1">
-                      {conversations[did].metadata.participants.map(
-                        (did, i) => (
-                          <div key={i}>
-                            {did && (
-                              <ContactAvatar
-                                key={i}
-                                contact={getContact(did)}
-                                className="h-6 w-6"
-                              />
-                            )}
-                          </div>
-                        )
-                      )}
+                      {getContacts(messages.slice(-1)[0]).map((contact, i) => (
+                        <Fragment key={i}>
+                          <ContactAvatar
+                            key={i}
+                            contact={contact}
+                            className="h-6 w-6"
+                          />
+                        </Fragment>
+                      ))}
                     </div>
                     <span className="flex-shrink-0 text-xs leading-5 font-medium">
-                      +{conversations[did].metadata.participants.length}
+                      +{messages.slice(-1)[0]?.recipients.length}
                     </span>
                   </div>
                 </td>
                 <td className="hidden md:table-cell px-6 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
                   {moment
-                    .unix(conversations[did].metadata.lastUpdated)
+                    .unix(messages.slice(-1)[0]?.data.created_time)
                     .fromNow()}
                 </td>
                 <td className="px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex space-x-2">
-                    <button onClick={() => goToConversation(did)}>
+                    <button onClick={() => goToConversation(groupId)}>
                       <div className="text-indigo-800 hover:text-indigo-900">
                         View
                       </div>
                     </button>
-                    <button
-                      onClick={() =>
-                        deleteConversation(conversations[did].metadata.groupId)
-                      }
-                    >
+                    <button onClick={() => deleteConversation(groupId)}>
                       <div className="text-red-800 hover:text-red-900">
                         Delete
                       </div>
@@ -479,17 +489,12 @@ export default function Dashboard() {
   const router = useRouter();
 
   const [readMessages] = useAtom(readMessagesAtom);
-  const [myAvatar] = useAtom(myAvatarAtom);
   const [peers] = useAtom(peersAtom);
   const [myDidLongFormDocument] = useAtom(myDidLongFormDocumentAtom);
-
-  const { data: contactsRes } = useFetchContacts();
   const { data: myDid } = useFetchMyDid();
   const { data: messages } = useFetchMessages({
     myDid: myDid,
-    contacts: contactsRes?.data.contacts,
   });
-  const { mutate: deleteGroupMessage } = useDeleteGroupMessages();
 
   useEffect(() => {
     if (peers) {
@@ -505,12 +510,20 @@ export default function Dashboard() {
     if (messages) {
       const { conversations, notifications } = messages;
       if (conversations) {
-        Object.keys(conversations).map((did, i) => {
-          let c = conversations[did].messages.filter(
+        // Object.keys(conversations).map((did, i) => {
+        //   let c = conversations[did].messages.filter(
+        //     (m) => readMessages.indexOf(m.id) === -1
+        //   ).length;
+        //   unreadMessageCount[did] = c;
+        //   unreadMessageCount["total"] += c;
+        // });
+
+        conversations.forEach((conversation) => {
+          let count = conversation.messages.filter(
             (m) => readMessages.indexOf(m.id) === -1
           ).length;
-          unreadMessageCount[did] = c;
-          unreadMessageCount["total"] += c;
+          unreadMessageCount[conversation.groupId] = count;
+          unreadMessageCount["total"] += count;
         });
       }
       if (notifications) {
@@ -640,19 +653,13 @@ export default function Dashboard() {
               <div className="align-middle inline-block min-w-full border-b border-gray-200">
                 {currentTable === "Messages" && (
                   <MessagesTable
-                    router={router}
-                    conversations={messages?.conversations}
                     unreadMessages={unreadMessages}
-                    contacts={contactsRes?.data.contacts}
-                    myDid={myDid}
-                    myAvatar={myAvatar}
-                    deleteGroupMessage={deleteGroupMessage}
+                    conversations={messages?.conversations}
                   />
                 )}
                 {currentTable === "Notifications" && (
                   <RequestsTable
                     requests={messages?.notifications.slice(-20)}
-                    contacts={contactsRes?.data.contacts}
                   />
                 )}
                 {currentTable === "Connected Users" && (

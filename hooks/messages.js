@@ -10,63 +10,44 @@ import {
 import { defaultRelayShortForm } from "../utils/onboard";
 import _ from "lodash";
 
-const getUniqueRecipients = (messages, myDid) =>
-  _.uniq(
-    _.chain(messages)
-      .map((r) => r.recipients)
-      .map((r) =>
-        r.filter((d) => d !== defaultRelayShortForm && d !== myDid.id)
-      )
-      .map((r) => r[0])
-      .value()
-  );
-
-const getMessagesByRecipients = (recipients, messages) => {
-  let conversations = [];
-  recipients.forEach((r) =>
-    conversations.push({
-      did: r,
-      messages: messages.filter((m) => m.recipients.includes(r)),
+const getNotifications = (messages, myDid) =>
+  _.chain(messages)
+    .filter(
+      (m) =>
+        m.type === "https://didcomm.org/webrtc/1.0/sdp" &&
+        JSON.parse(m.data).body.content.signal?.type !== "answer"
+    )
+    .map((m) => {
+      return { ...m, data: JSON.parse(m.data) };
     })
-  );
-  return conversations;
-};
-
-const getNotifications = (m, myDid) => {
-  let messages = m.filter(
-    (m) =>
-      m.type === "https://didcomm.org/webrtc/1.0/sdp" &&
-      JSON.parse(m.data).body.content.signal?.type !== "answer"
-  );
-  let recipients = getUniqueRecipients(invites, myDid);
-  let invites = getMessagesByRecipients(recipients, messages);
-  return invites;
-};
+    .sortBy((m) => m.data.created_time)
+    .value();
 
 // convertMessagesIntoConversations sorts messages into conversations where the
 // conversationID is the did of the peer you are communicating with
 const convertMessagesintoConversations = (messages, myDid) => {
+  let conversations = [];
   const sortedMessages = _.chain(messages)
     .filter(
       (m) =>
         m.type !== "https://impervious.ai/didcomm/relay-registration/1.0" &&
         JSON.parse(m.data).body.content.signal?.type !== "answer"
     )
-    .map((m) => {
-      return {
-        ...m,
-        data: {
-          ...JSON.parse(m.data),
-          from: JSON.parse(m.data).from.split("?")[0],
-          groupId: m.groupId,
-        },
-      };
-    })
     .sortBy((m) => m.data.created_time)
+    .map((m) => {
+      return { ...m, data: JSON.parse(m.data) };
+    })
     .value();
 
-  let recipients = getUniqueRecipients(sortedMessages, myDid);
-  let conversations = getMessagesByRecipients(recipients, sortedMessages);
+  let conversationIds = _.uniq(sortedMessages.map((m) => m.groupId));
+  conversationIds.forEach((groupId) => {
+    conversations.push({
+      groupId,
+      messages: sortedMessages.filter((m) => m.groupId === groupId),
+    });
+  });
+
+  console.log(conversations);
 
   return conversations;
 };
@@ -74,7 +55,7 @@ const convertMessagesintoConversations = (messages, myDid) => {
 // useFetchMessages gets all of the messages, sorts them into conversations assuming a 1:1 pair (for now).
 // It will be the responsibility of the consuming component to sort between messages types as they choose.
 // NOTE: Requires myDid as a parameter to handle the sorting of messages into conversations
-export const useFetchMessages = ({ myDid, contacts, onSuccess }) => {
+export const useFetchMessages = ({ myDid, onSuccess }) => {
   return useQuery("fetch-messages", fetchMessages, {
     onSuccess,
     onError: (error) => {
