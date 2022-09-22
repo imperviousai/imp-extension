@@ -149,7 +149,6 @@ const SubscribeProvider = ({ children }) => {
           if (message) {
             return message.groupId;
           }
-          console.log("GOT A MESSAGE: ", message);
         }
       };
 

@@ -193,7 +193,6 @@ export const getContactByDid = ({ shortFormDid, contacts }) => {
 // if the recipient does not have a saved contact, we return an "unknown contact"
 // TODO: perform automatic lookups in algolia for the contact, if the contact is not saved yet
 export const getContactsByMessage = ({ message, contacts, myDid }) => {
-  console.log("MESSAGE: ", message);
   let f = message.recipients.filter((r) => r !== myDid.id);
   return f.map((recipient) => {
     if (recipient !== myDid.id) {

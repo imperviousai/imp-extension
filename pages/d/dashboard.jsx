@@ -190,7 +190,10 @@ const MessagesTable = ({ conversations, unreadMessages }) => {
                     </button>
                     <button
                       onClick={() =>
-                        deleteConversation({ groupId, deleteGroupMessage })
+                        deleteConversation({
+                          groupId,
+                          deleteGroupMessage,
+                        })
                       }
                     >
                       <div className="text-red-800 hover:text-red-900">

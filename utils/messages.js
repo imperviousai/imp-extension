@@ -164,7 +164,11 @@ export const showMessagesAsRead = (state, messages) => {
 };
 
 // UI action to delete a conversation
-export const deleteConversation = ({ groupId, deleteGroupMessage }) => {
+export const deleteConversation = ({
+  groupId,
+  deleteGroupMessage,
+  callback,
+}) => {
   // this function will change later down the road.
   groupId &&
     toast(
@@ -176,6 +180,9 @@ export const deleteConversation = ({ groupId, deleteGroupMessage }) => {
               type="button"
               onClick={() => {
                 deleteGroupMessage({ groupId });
+                if (callback) {
+                  callback();
+                }
                 closeToast();
               }}
               className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"

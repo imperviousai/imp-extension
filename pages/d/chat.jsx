@@ -56,14 +56,8 @@ import useAutosizeTextArea from "../../components/useAutosizeTextArea";
 import ContactAvatar from "../../components/contact/ContactAvatar";
 import { getContactsByMessage } from "../../utils/contacts";
 
-const isJSON = (msg) => {
-  try {
-    JSON.parse(msg);
-  } catch (e) {
-    return false;
-  }
-  return true;
-};
+const isJSON = (msg) =>
+  (msg.includes("{") || msg.includes("}")) && JSON.parse(msg);
 
 const EmojiPicker = dynamic(() => import("../../components/EmojiPicker"), {
   ssr: false,
@@ -256,11 +250,10 @@ const ConversationHeader = ({
   setOpenContactPreview,
   setOpenPayment,
   sendInvite,
+  activeConversation,
 }) => {
   const [currentConversationPeer] = useAtom(currentConversationPeerAtom);
-  const [currentConversation, setCurrentConversation] = useAtom(
-    currentConversationAtom
-  );
+  const [, setCurrentConversation] = useAtom(currentConversationAtom);
   const [currentConversationContact, setCurrentConversationContact] = useAtom(
     currentConversationContactAtom
   );
@@ -413,11 +406,13 @@ const ConversationHeader = ({
                           <a
                             onClick={() => {
                               deleteConversation({
-                                groupId: currentConversation,
+                                groupId: activeConversation.groupId,
                                 deleteGroupMessage,
+                                callback: () => {
+                                  setCurrentConversation();
+                                  setCurrentConversationContact();
+                                },
                               });
-                              setCurrentConversation();
-                              setCurrentConversationContact();
                             }}
                             className={classNames(
                               active
@@ -742,7 +737,6 @@ const ConversationBody = ({ activeConversation }) => {
 
   useEffect(() => {
     if (activeConversation) {
-      console.log("ACTIVE CONVERSATION: ", activeConversation);
       setConvo(activeConversation.messages);
       setReadMessages(
         showMessagesAsRead(readMessages, activeConversation.messages)
@@ -991,6 +985,7 @@ export default function Chat() {
   });
   const { mutate: sendBasicMessage } = useSendMessage();
 
+  // TODO: rework these two useEffecfts, but for now they work
   useEffect(() => {
     if (currentConversation) {
       const conversation = messages?.conversations.find(
@@ -1006,8 +1001,29 @@ export default function Chat() {
         // TODO: support group messages
         setCurrentConversationContact(contacts[0]);
       }
-    } else {
-      setActiveConversation();
+    }
+  }, [
+    contactsRes?.data.contacts,
+    currentConversation,
+    messages?.conversations,
+    myDid,
+    setCurrentConversationContact,
+  ]);
+
+  useEffect(() => {
+    if (currentConversationContact) {
+      //attempt to grab relevant conversation
+      let conversation = messages?.conversations.find((c) =>
+        c.messages.find((m) =>
+          m.recipients.includes(currentConversationContact.did)
+        )
+      );
+      if (conversation) {
+        setActiveConversation(conversation);
+      } else {
+        setActiveConversation();
+        setCurrentConversation();
+      }
     }
   }, [
     currentConversation,
@@ -1015,6 +1031,8 @@ export default function Chat() {
     contactsRes?.data.contacts,
     myDid,
     messages,
+    currentConversationContact,
+    setCurrentConversation,
   ]);
 
   const sendInvite = () => {
@@ -1062,6 +1080,7 @@ export default function Chat() {
                     setOpenContactPreview={setOpenContactPreview}
                     setOpenPayment={setOpenPayment}
                     sendInvite={sendInvite}
+                    activeConversation={activeConversation}
                   />
                 </div>
                 <div className="grow flex-1 pl-8 pr-4 overflow-hidden">
