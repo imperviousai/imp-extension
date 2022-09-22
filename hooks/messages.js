@@ -10,8 +10,8 @@ import {
 import { defaultRelayShortForm } from "../utils/onboard";
 import _ from "lodash";
 
-const getNotifications = (messages, myDid) =>
-  _.chain(messages)
+const getNotifications = (messages, myDid) => {
+  let notifications = _.chain(messages)
     .filter(
       (m) =>
         m.type === "https://didcomm.org/webrtc/1.0/sdp" &&
@@ -22,6 +22,8 @@ const getNotifications = (messages, myDid) =>
     })
     .sortBy((m) => m.data.created_time)
     .value();
+  return notifications;
+};
 
 // convertMessagesIntoConversations sorts messages into conversations where the
 // conversationID is the did of the peer you are communicating with
@@ -46,8 +48,6 @@ const convertMessagesintoConversations = (messages, myDid) => {
       messages: sortedMessages.filter((m) => m.groupId === groupId),
     });
   });
-
-  console.log(conversations);
 
   return conversations;
 };
