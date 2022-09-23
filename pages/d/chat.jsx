@@ -766,7 +766,7 @@ const ConversationBody = ({ activeConversation }) => {
           <p>
             Sent an invitiation to connect.{" "}
             {isNotificationExpired(message.data.created_time) &&
-              message.data.from !== myDid && (
+              getShortFormId(message.data.from) !== myDid.id && (
                 <a
                   className="font-bold underline"
                   onClick={() =>
