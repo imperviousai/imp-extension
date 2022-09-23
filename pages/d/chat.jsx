@@ -691,6 +691,14 @@ const ConversationFooter = ({ sendBasicMessage, myDid }) => {
     }
   };
 
+  // BUG: setMsg("") when using a <textarea> seems to instead set state to "\n"
+  // even in a default CRA application. For now, this will do.
+  const handleChange = (e) => {
+    if (e.target.value !== "\n") {
+      setMsg(e.target.value);
+    }
+  };
+
   return (
     <div className="bg-white shadow">
       <SelectedFileInput fileInput={fileInput} setFileInput={setFileInput} />
@@ -705,7 +713,7 @@ const ConversationFooter = ({ sendBasicMessage, myDid }) => {
               ref={textAreaRef}
               value={msg}
               onKeyPress={handleKeyDown}
-              onChange={(e) => setMsg(e.target.value)}
+              onChange={handleChange}
               className="tracking-wide shadow-sm focus:ring-primary focus:border-primary border-primary border block w-full sm:text-sm border-gray-300 px-4 rounded-md pt-2"
               placeholder="Start a new message"
             />

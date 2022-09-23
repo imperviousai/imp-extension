@@ -88,6 +88,14 @@ const ConversationFooter = ({ sendPeerMessage, peers }) => {
     }
   };
 
+  // BUG: setMsg("") when using a <textarea> seems to instead set state to "\n"
+  // even in a default CRA application. For now, this will do.
+  const handleChange = (e) => {
+    if (e.target.value !== "\n") {
+      setMsg(e.target.value);
+    }
+  };
+
   return (
     <>
       <SelectedFileInput fileInput={fileInput} setFileInput={setFileInput} />
@@ -101,7 +109,7 @@ const ConversationFooter = ({ sendPeerMessage, peers }) => {
           placeholder="Type message here ..."
           onKeyDown={handleKeyDown}
           value={messageInput}
-          onChange={(e) => setMessageInput(e.target.value)}
+          onChange={handleChange}
         />
         <div className="flex">
           <FileUploader setFile={setFileInput} />
