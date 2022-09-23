@@ -143,8 +143,8 @@ const SubscribeProvider = ({ children }) => {
       const getGroupIdFromContact = (contact) => {
         // TODO: get rid of this function to support group messages
         if (messages) {
-          let message = messages?.conversations.find((m) =>
-            m.recipients?.includes(contact.did)
+          let message = messages?.conversations.find((convo) =>
+            convo.messages.find((m) => m.recipients?.includes(contact.did))
           );
           if (message) {
             return message.groupId;
@@ -187,8 +187,9 @@ const SubscribeProvider = ({ children }) => {
       }
       if (type === "live-messaging-invitation") {
         // setcurrent converssation
+
+        setCurrentConversation(getGroupIdFromContact(knownContact));
         if (router.pathname !== "/d/chat") {
-          setCurrentConversation(getGroupIdFromContact(knownContact));
           routerRef.current.push("/d/chat");
         }
       }

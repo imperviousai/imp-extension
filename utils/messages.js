@@ -3,6 +3,7 @@ import { request } from "./axios-utils";
 import { toast } from "react-toastify";
 import moment from "moment";
 import { getShortFormId } from "./id";
+import { getContactByDid } from "./contacts";
 
 // Utility functions for message handling
 
@@ -99,8 +100,10 @@ export const handleDidCommMessage = ({ data, contacts, pathname }) => {
     const fromId = getShortFormId(msg.from);
 
     // check if the incoming message is from a known contact
-    let knownContact =
-      contacts.find((contact) => contact.did === fromId) || null;
+    let knownContact = getContactByDid({
+      shortFormDid: fromId,
+      contacts,
+    });
 
     switch (msg && msg.type) {
       case "https://didcomm.org/basicmessage/2.0/message":

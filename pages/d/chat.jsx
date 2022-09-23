@@ -54,7 +54,7 @@ import { encode } from "base64-arraybuffer";
 import FileDownload from "../../components/meeting/FileDownload";
 import useAutosizeTextArea from "../../components/useAutosizeTextArea";
 import ContactAvatar from "../../components/contact/ContactAvatar";
-import { getContactsByMessage } from "../../utils/contacts";
+import { getContactByDid, getContactsByMessage } from "../../utils/contacts";
 
 const isJSON = (msg) =>
   (msg.includes("{") || msg.includes("}")) && JSON.parse(msg);
@@ -405,14 +405,16 @@ const ConversationHeader = ({
                         {({ active }) => (
                           <a
                             onClick={() => {
-                              deleteConversation({
-                                groupId: activeConversation.groupId,
-                                deleteGroupMessage,
-                                callback: () => {
-                                  setCurrentConversation();
-                                  setCurrentConversationContact();
-                                },
-                              });
+                              if (activeConversation) {
+                                deleteConversation({
+                                  groupId: activeConversation.groupId,
+                                  deleteGroupMessage,
+                                  callback: () => {
+                                    setCurrentConversation();
+                                    setCurrentConversationContact();
+                                  },
+                                });
+                              }
                             }}
                             className={classNames(
                               active
@@ -758,9 +760,6 @@ const ConversationBody = ({ activeConversation }) => {
 
   const renderContent = (message) => {
     if (message.data.type === "https://didcomm.org/webrtc/1.0/sdp") {
-      const knownContact = contactsRes?.data.contacts.find(
-        (contact) => contact.did === message.data.from
-      );
       const { signal } = message.data.body.content;
       if (signal.type === "offer") {
         return (
@@ -774,7 +773,10 @@ const ConversationBody = ({ activeConversation }) => {
                     confirmPeerInvite({
                       detail: {
                         message: message.data.body.content,
-                        knownContact: knownContact || null,
+                        knownContact: getContactByDid({
+                          shortFormDid: getShortFormId(message.data.from),
+                          contacts: contactsRes.data.contacts,
+                        }),
                         sourceType: "didcomm",
                       },
                     })
